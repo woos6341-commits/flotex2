@@ -1,0 +1,52 @@
+import { useState } from "react";
+import { ActivityIndicator, Pressable, Text, TextInput, View } from "react-native";
+import { ActionButton, Card, Pill } from "@/components/atheer-ui";
+import { trpc } from "@/lib/trpc";
+import { EXTERNAL_TRANSFER_CURRENCIES, EXTERNAL_TRANSFER_STATUS_LABELS, type ExternalTransferCurrency, type ExternalTransferStatus } from "@/shared/external-transfers";
+
+const STATUSES: ExternalTransferStatus[] = ["new", "under_review", "awaiting_details", "approved", "completed", "rejected"];
+const PENDING_STATUSES: ExternalTransferStatus[] = ["new", "under_review", "awaiting_details"];
+
+export function ExternalTransfersAdmin({ onOpenChat }: { onOpenChat: (userId: number) => void }) {
+  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [priceDraft, setPriceDraft] = useState<Partial<Record<ExternalTransferCurrency, { rate: string; feeEgp: string }>>>({});
+  const requests = trpc.admin.externalTransferRequests.useQuery(undefined, { refetchInterval: 8000 });
+  const pricing = trpc.admin.externalTransferPricing.useQuery(undefined, { refetchInterval: 60000 });
+  const utils = trpc.useUtils();
+  const update = trpc.admin.updateExternalTransferStatus.useMutation({ onSuccess: async () => { setSelectedId(null); await Promise.all([requests.refetch(), utils.admin.recentOperations.invalidate()]); } });
+  const updatePrice = trpc.admin.updateExternalTransferPricing.useMutation({ onSuccess: async () => { await pricing.refetch(); } });
+  const all = requests.data ?? [];
+  const pending = all.filter((item) => PENDING_STATUSES.includes(item.status as ExternalTransferStatus));
+  const history = all.filter((item) => !PENDING_STATUSES.includes(item.status as ExternalTransferStatus));
+  const selected = all.find((item) => item.id === selectedId);
+  const tone = (status: string) => status === "rejected" ? "red" as const : status === "approved" || status === "completed" ? "green" as const : status === "new" ? "gold" as const : "muted" as const;
+
+  return <View className="gap-4">
+    <Card><Text className="text-sm leading-6 text-[#9BA8B8]" style={{ textAlign: "right" }}>تظهر هنا طلبات تحويل الأموال إلى حسابات خارج مصر. هذه الطلبات لا تخصم رصيدًا ولا تنفذ تحويلًا تلقائيًا؛ تستخدم فقط لاستكمال البيانات وسعر الصرف والرسوم عبر المراسلة.</Text></Card>
+    <Card>
+      <Text className="mb-1 text-base font-bold text-[#F7F1E3]" style={{ textAlign: "right" }}>أسعار الصرف والرسوم</Text>
+      <Text className="mb-3 text-xs leading-5 text-[#9BA8B8]" style={{ textAlign: "right" }}>السعر هو عدد الجنيهات المصرية لكل وحدة من العملة الأجنبية، والرسوم بالجنيه المصري. تحفظ الطلبات السعر والرسوم وقت الإرسال، ولا ينتج عنها أي خصم أو تحويل تلقائي.</Text>
+      {pricing.isLoading ? <ActivityIndicator color="#D7A948" /> : EXTERNAL_TRANSFER_CURRENCIES.map((currencyCode) => {
+        const saved = pricing.data?.find((item) => item.currencyCode === currencyCode);
+        const draft = priceDraft[currencyCode];
+        return <View key={currencyCode} className="mb-3 rounded-2xl border border-[#273548] bg-[#0B1018] p-3">
+          <Text className="mb-2 text-sm font-bold text-[#F7F1E3]" style={{ textAlign: "right" }}>{currencyCode} · {saved?.rate ? `آخر تحديث ${saved.updatedAt ? new Date(saved.updatedAt).toLocaleString("ar-EG") : "—"}` : "غير محدد"}</Text>
+          <View className="flex-row gap-2">
+            <View className="flex-1"><Text className="mb-1 text-[10px] text-[#9BA8B8]" style={{ textAlign: "right" }}>سعر الصرف (ج.م/وحدة)</Text><TextInput value={draft?.rate ?? saved?.rate ?? ""} onChangeText={(rate) => setPriceDraft((current) => ({ ...current, [currencyCode]: { rate, feeEgp: current[currencyCode]?.feeEgp ?? saved?.feeEgp ?? "0.00" } }))} keyboardType="decimal-pad" inputMode="decimal" placeholder="0.000000" placeholderTextColor="#657286" style={{ minHeight: 44, borderWidth: 1, borderColor: "#273548", borderRadius: 12, backgroundColor: "#111B28", color: "#F7F1E3", paddingHorizontal: 10, textAlign: "right" }} /></View>
+            <View className="flex-1"><Text className="mb-1 text-[10px] text-[#9BA8B8]" style={{ textAlign: "right" }}>الرسوم (ج.م)</Text><TextInput value={draft?.feeEgp ?? saved?.feeEgp ?? "0.00"} onChangeText={(feeEgp) => setPriceDraft((current) => ({ ...current, [currencyCode]: { rate: current[currencyCode]?.rate ?? saved?.rate ?? "", feeEgp } }))} keyboardType="decimal-pad" inputMode="decimal" placeholder="0.00" placeholderTextColor="#657286" style={{ minHeight: 44, borderWidth: 1, borderColor: "#273548", borderRadius: 12, backgroundColor: "#111B28", color: "#F7F1E3", paddingHorizontal: 10, textAlign: "right" }} /></View>
+          </View>
+          <View className="mt-2"><ActionButton label={updatePrice.isPending ? "جارٍ الحفظ..." : `حفظ ${currencyCode}`} icon="save-outline" secondary onPress={() => {
+            const rate = (draft?.rate ?? saved?.rate ?? "").trim();
+            const feeEgp = (draft?.feeEgp ?? saved?.feeEgp ?? "0.00").trim();
+            if (!rate || !/^\d+(?:\.\d{1,6})?$/.test(rate) || !/^\d+(?:\.\d{1,2})?$/.test(feeEgp)) return;
+            updatePrice.mutate({ currencyCode, rate, feeEgp });
+          }} /></View>
+        </View>;
+      })}
+      {updatePrice.error ? <Text className="mt-2 text-xs text-[#FF9BA7]" style={{ textAlign: "right" }}>{updatePrice.error.message}</Text> : null}
+    </Card>
+    <Card><View className="mb-3 flex-row items-center justify-between"><Pill tone={pending.length ? "gold" : "muted"}>{pending.length} طلب</Pill><Text className="text-base font-bold text-[#F7F1E3]" style={{ textAlign: "right" }}>طلبات المعاملات الخارجية قيد المراجعة</Text></View>{requests.isLoading ? <ActivityIndicator color="#D7A948" /> : pending.length ? pending.map((item) => <Pressable key={item.id} onPress={() => setSelectedId(item.id)} className={`mb-2 rounded-2xl border p-3 ${selectedId === item.id ? "border-[#D7A948] bg-[#D7A94818]" : "border-[#273548] bg-[#0B1018]"}`}><View className="flex-row items-center justify-between"><Pill tone={tone(item.status)}>{EXTERNAL_TRANSFER_STATUS_LABELS[item.status as ExternalTransferStatus]}</Pill><View className="flex-1"><Text className="text-sm font-bold text-[#F7F1E3]" style={{ textAlign: "right" }}>{item.userName || "مستخدم"} · {item.customerId || "بدون رقم حساب"}</Text><Text className="mt-1 text-xs text-[#D6C79E]" style={{ textAlign: "right" }}>{item.countryName} · {item.currencyName} ({item.currencyCode})</Text></View></View><Text className="mt-2 text-[10px] text-[#657286]" style={{ textAlign: "right" }}>{item.reference} · {new Date(item.createdAt).toLocaleString("ar-EG")}</Text></Pressable>) : <Text className="text-sm text-[#9BA8B8]" style={{ textAlign: "right" }}>لا توجد طلبات معلقة؛ القرارات النهائية محفوظة في الأرشيف.</Text>}</Card>
+    <Card><View className="mb-3 flex-row items-center justify-between"><Pill tone="muted">{history.length} سجل</Pill><Text className="text-base font-bold text-[#F7F1E3]" style={{ textAlign: "right" }}>أرشيف المعاملات الخارجية</Text></View>{history.length ? history.map((item) => <Pressable key={item.id} onPress={() => setSelectedId(item.id)} className="mb-2 rounded-xl border border-[#273548] bg-[#0B1018] p-3"><View className="flex-row items-center justify-between"><Pill tone={tone(item.status)}>{EXTERNAL_TRANSFER_STATUS_LABELS[item.status as ExternalTransferStatus]}</Pill><Text className="text-xs font-bold text-[#F7F1E3]">{item.userName || "مستخدم"} · {item.customerId || "—"}</Text></View><Text className="mt-2 text-[10px] text-[#657286]" style={{ textAlign: "right" }}>{item.reference} · تاريخ الطلب: {new Date(item.createdAt).toLocaleString("ar-EG")}{item.reviewedAt ? ` · آخر قرار: ${new Date(item.reviewedAt).toLocaleString("ar-EG")}` : ""}</Text></Pressable>) : <Text className="text-sm text-[#9BA8B8]" style={{ textAlign: "right" }}>لم تُسجل قرارات نهائية بعد.</Text>}</Card>
+    {selected ? <Card className="border-[#5C4A28]"><View className="flex-row items-center justify-between"><Pill tone={tone(selected.status)}>{EXTERNAL_TRANSFER_STATUS_LABELS[selected.status as ExternalTransferStatus]}</Pill><Text className="text-base font-bold text-[#F7F1E3]" style={{ textAlign: "right" }}>تفاصيل الطلب</Text></View><View className="mt-3 gap-1.5"><Text className="text-sm text-[#F7F1E3]" style={{ textAlign: "right" }}>المستخدم: {selected.userName || "مستخدم"}</Text><Text className="text-sm text-[#F7F1E3]" style={{ textAlign: "right" }}>رقم الحساب: {selected.customerId || "غير متاح"}</Text><Text className="text-sm text-[#F7F1E3]" style={{ textAlign: "right" }}>الدولة: {selected.countryName}</Text><Text className="text-sm text-[#F7F1E3]" style={{ textAlign: "right" }}>العملة: {selected.currencyName} ({selected.currencyCode})</Text>{selected.foreignAmount ? <Text className="text-sm leading-6 text-[#D6C79E]" style={{ textAlign: "right" }}>المبلغ: {selected.foreignAmount} {selected.currencyCode}{"\n"}سعر الصرف: {selected.exchangeRate} ج.م{ "\n"}القيمة: {selected.egpEquivalent} ج.م · الرسوم: {selected.feeEgp} ج.م{ "\n"}الإجمالي التقديري: {selected.egpTotal} ج.م</Text> : <Text className="text-xs text-[#9BA8B8]" style={{ textAlign: "right" }}>طلب قديم قبل تسجيل لقطة سعر الصرف.</Text>}<Text className="text-sm text-[#9BA8B8]" style={{ textAlign: "right" }}>رقم الطلب: {selected.reference}</Text><Text className="text-xs text-[#657286]" style={{ textAlign: "right" }}>تاريخ الإرسال: {new Date(selected.createdAt).toLocaleString("ar-EG")}{selected.reviewedAt ? ` · آخر قرار: ${new Date(selected.reviewedAt).toLocaleString("ar-EG")}` : ""}</Text></View><View className="mt-4"><ActionButton label="فتح محادثة المستخدم" icon="chatbubbles-outline" onPress={() => onOpenChat(selected.userId)} /></View><Text className="mb-2 mt-5 text-sm font-bold text-[#F7F1E3]" style={{ textAlign: "right" }}>تحديث حالة الطلب</Text><View className="gap-2">{STATUSES.map((status) => <Pressable key={status} disabled={update.isPending || selected.status === status} onPress={() => update.mutate({ requestId: selected.id, status })} className={`rounded-xl border px-3 py-2 ${selected.status === status ? "border-[#D7A948] bg-[#D7A94822]" : "border-[#273548] bg-[#0B1018]"}`}><Text className={`text-center text-xs font-bold ${selected.status === status ? "text-[#D7A948]" : "text-[#C8D0DB]"}`}>{EXTERNAL_TRANSFER_STATUS_LABELS[status]}</Text></Pressable>)}</View>{update.error ? <Text className="mt-3 text-sm text-[#FF9BA7]" style={{ textAlign: "right" }}>{update.error.message}</Text> : null}</Card> : null}
+  </View>;
+}
