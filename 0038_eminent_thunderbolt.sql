@@ -1,0 +1,1 @@
+ALTER TABLE `users` ADD `governorate` varchar(40);

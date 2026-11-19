@@ -1,0 +1,1 @@
+ALTER TABLE `requests` ADD `destination` varchar(180);

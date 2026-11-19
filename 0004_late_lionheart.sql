@@ -1,0 +1,1 @@
+ALTER TABLE `requests` ADD CONSTRAINT `requests_transfer_reference_unique` UNIQUE(`transferReference`);

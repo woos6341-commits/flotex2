@@ -1,0 +1,1 @@
+ALTER TABLE `push_deliveries` MODIFY COLUMN `status` enum('pending','sent','failed','unknown') NOT NULL DEFAULT 'pending';

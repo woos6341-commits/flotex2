@@ -1,0 +1,1 @@
+ALTER TABLE `orders` ADD `reservedAmount` decimal(14,2) DEFAULT '0.00' NOT NULL;

@@ -1,0 +1,1 @@
+ALTER TABLE `savings_settings` ADD `minimumAmount` decimal(14,2) DEFAULT '1000.00' NOT NULL;

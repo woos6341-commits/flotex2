@@ -1,0 +1,1 @@
+ALTER TABLE `market_instruments` ADD `assetClass` enum('egyptian_equity','gold','investment_fund') DEFAULT 'egyptian_equity' NOT NULL;

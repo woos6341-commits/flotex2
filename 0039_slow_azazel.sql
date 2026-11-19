@@ -1,0 +1,1 @@
+ALTER TABLE `coin_ledger_entries` MODIFY COLUMN `kind` enum('inventory','buy_cash','sell_funding','transfer','admin_adjustment') NOT NULL;

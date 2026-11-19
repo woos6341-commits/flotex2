@@ -1,0 +1,2 @@
+ALTER TABLE `game_topup_games` ADD `minDepositAmount` decimal(14,2) DEFAULT '50.00' NOT NULL;--> statement-breakpoint
+ALTER TABLE `game_topup_games` ADD `minWithdrawAmount` decimal(14,2) DEFAULT '50.00' NOT NULL;
