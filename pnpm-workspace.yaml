@@ -1,0 +1,12 @@
+packages:
+  - .
+# Compatible package-level settings remain for the pinned pnpm 9 toolchain.
+# Newer pnpm reads these reviewed workspace settings instead.
+patchedDependencies:
+  react-native-css-interop@0.2.1: patches/react-native-css-interop@0.2.1.patch
+onlyBuiltDependencies:
+  - esbuild
+  - unrs-resolver
+allowBuilds:
+  esbuild: true
+  unrs-resolver: true
