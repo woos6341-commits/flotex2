@@ -1,0 +1,18 @@
+diff --git a/dist/metro/index.js b/dist/metro/index.js
+index c91ba6adf049dd5c6eec1ec8301ecc0802f41bfc..bce4f408fd2861dca0b859c74c713c7cce7bbbcf 100644
+--- a/dist/metro/index.js
++++ b/dist/metro/index.js
+@@ -177,6 +177,13 @@ async function startCSSProcessor(filePath, platform, isDev, { input, getCSSForPl
+                 : getNativeJS((0, css_to_rn_1.cssToReactNativeRuntime)(css, options), debug)));
+             debug(`virtualStyles.emit ${platform}`);
+             haste.emit("change", {
++                // Metro in Expo 57 expects changes/rootDir; retain eventsQueue for older Metro.
++                rootDir: "",
++                changes: {
++                    addedFiles: new Map(),
++                    modifiedFiles: new Map([[filePath, null]]),
++                    removedFiles: new Map(),
++                },
+                 eventsQueue: [
+                     {
+                         filePath,

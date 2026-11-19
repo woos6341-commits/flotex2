@@ -1,0 +1,136 @@
+{
+  "routes": [
+    {
+      "path": "/",
+      "title": "Flotex EGP"
+    },
+    {
+      "path": "/(tabs)",
+      "title": "Flotex EGP"
+    },
+    {
+      "path": "/(tabs)/activity",
+      "title": "النشاطات"
+    },
+    {
+      "path": "/(tabs)/profile",
+      "title": "حسابي"
+    },
+    {
+      "path": "/(tabs)/wallet",
+      "title": "المحفظة"
+    },
+    {
+      "path": "/(tabs)/stocks",
+      "title": "الذهب"
+    },
+    {
+      "path": "/coin-wallet",
+      "title": "محفظة كوين فولتكس"
+    },
+    {
+      "path": "/coin-buy",
+      "title": "شراء كوين"
+    },
+    {
+      "path": "/coin-sell",
+      "title": "بيع كوين"
+    },
+    {
+      "path": "/coin-send",
+      "title": "إرسال كوين"
+    },
+    {
+      "path": "/savings",
+      "title": "الإدخار"
+    },
+    {
+      "path": "/savings-history",
+      "title": "سجل معاملات الإدخار"
+    },
+    {
+      "path": "/savings-how-to",
+      "title": "طريقة الإدخار"
+    },
+    {
+      "path": "/deposit",
+      "title": "طلب إيداع"
+    },
+    {
+      "path": "/withdrawal",
+      "title": "طلب سحب"
+    },
+    {
+      "path": "/transfer",
+      "title": "إرسال أموال"
+    },
+    {
+      "path": "/external-transfers",
+      "title": "المعاملات الخارجية"
+    },
+    {
+      "path": "/order/:symbol",
+      "title": "طلب تداول"
+    },
+    {
+      "path": "/gold-order",
+      "title": "طلب الذهب"
+    },
+    {
+      "path": "/stock/:symbol",
+      "title": "تفاصيل السهم"
+    },
+    {
+      "path": "/control",
+      "title": "لوحة التحكم"
+    },
+    {
+      "path": "/admin",
+      "title": "الإدارة"
+    },
+    {
+      "path": "/onboarding",
+      "title": "إكمال التسجيل"
+    },
+    {
+      "path": "/register",
+      "title": "التسجيل"
+    },
+    {
+      "path": "/forgot-password",
+      "title": "استعادة كلمة المرور"
+    },
+    {
+      "path": "/phone-verification",
+      "title": "توثيق الهاتف"
+    },
+    {
+      "path": "/account-verification",
+      "title": "توثيق الحساب"
+    },
+    {
+      "path": "/change-phone",
+      "title": "تغيير رقم الهاتف"
+    },
+    {
+      "path": "/support",
+      "title": "المراسلة والدعم"
+    },
+    {
+      "path": "/frozen-support",
+      "title": "دعم الحساب المجمد"
+    },
+    {
+      "path": "/guest-support",
+      "title": "دعم الزوار"
+    },
+    {
+      "path": "/security-pin",
+      "title": "رمز الأمان"
+    },
+    {
+      "path": "/sessions",
+      "title": "الأجهزة والجلسات"
+    }
+  ]
+}
